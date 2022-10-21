@@ -114,6 +114,18 @@ size_t qIOUtil_StrlCpy( char * dst,
     return srclen;
 }
 /*============================================================================*/
+size_t qIOUtil_StrlCat( char * dst,
+                        const char * src,
+                        size_t maxlen )
+{
+    size_t len;
+    const size_t offset = qIOUtil_StrLen( dst, Q_IOUTIL_MAX_STRLEN );
+
+    len = qIOUtil_StrlCpy (dst + offset, src, maxlen);
+
+    return len + offset;
+}
+/*============================================================================*/
 /*perform conversion of unsigned integer to ASCII. NULL Terminator not included*/
 static size_t qIOUtil_xBase_U32toA( qUINT32_t num,
                                     char* str,
