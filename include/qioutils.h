@@ -127,6 +127,19 @@
                             size_t maxlen );
 
     /**
+    * @brief Appends up to @a (maxlen - 1) characters from the null-terminated
+    * string @a src to null-terminated
+    * @a dst, null-terminating the result.
+    * @param[out] dst The destination string
+    * @param[in] src The source string
+    * @param[in] maxlen Maximum number of characters to copy
+    * @return The length of @a src
+    */
+    size_t qIOUtil_StrlCat( char * dst,
+                            const char * src,
+                            size_t maxlen );
+
+    /**
     * @brief Invert the endianess for n bytes of the specified memory location.
     * @param[in,out] pData A pointer to block of data
     * @param[in] n The number of bytes to swap
