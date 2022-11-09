@@ -1,0 +1,26 @@
+@startuml
+state DoorClosed {
+  [*] --> Off
+  state Off {
+  }
+  
+  state Heating {
+    state Toasting {
+    }
+
+    state Baking {
+    }    
+  }
+}
+
+state DoorOpened {
+}
+
+[*] --> DoorClosed
+DoorClosed --> DoorOpened: SYS_SIG_OPEN
+Off --> Toasting: SYS_SIG_TOAST
+Off --> Baking: SYS_SIG_BAKE
+Heating --> Off: SYS_SIG_OFFTIMEOUT
+DoorOpened --> DoorClosed: SYS_SIG_CLOSE
+
+@enduml
