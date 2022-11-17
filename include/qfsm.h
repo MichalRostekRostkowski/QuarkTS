@@ -52,6 +52,11 @@
     #define QSM_TSOPT_MASK          ( (qSM_TimeoutSpecOptions_t)0x00FFFFFFuL )
     /*! @endcond  */
 
+    /**
+     * @brief The type to be used as a signal type in signal structre.
+     */
+    typedef qUINT32_t qSM_SignalType_t;
+
     /*FSM internal signals*/
     /**
     * @brief Built-in signal that can be used to set a nested initial-transition
@@ -59,30 +64,30 @@
     * @note Transitions by setting the qSM_Handler_t::NextState member are not
     * allowed here
     */
-    #define QSM_SIGNAL_START        ( (qSM_Signal_t)0xFFFFFFFFuL )
+    #define QSM_SIGNAL_TYPE_START        ( (qSM_SignalType_t)0xFFFFFFFFuL )
     /**
     * @brief Built-in signal to indicate if the current state has just exit to
     * another state.
     * @note Transitions are not allowed here
     */
-    #define QSM_SIGNAL_EXIT         ( (qSM_Signal_t)0xFFFFFFFEuL )
+    #define QSM_SIGNAL_TYPE_EXIT         ( (qSM_SignalType_t)0xFFFFFFFEuL )
     /**
     * @brief Built-in signal to indicate if the current state has just entered
     * from another state.
     * @note Transitions are not allowed here
     */
-    #define QSM_SIGNAL_ENTRY        ( (qSM_Signal_t)0xFFFFFFFDuL )
+    #define QSM_SIGNAL_TYPE_ENTRY        ( (qSM_SignalType_t)0xFFFFFFFDuL )
     /**
     * @brief Built-in signal to indicate that there is not signal available.
     */
-    #define QSM_SIGNAL_NONE         ( (qSM_Signal_t)0xFFFFFFFCuL )
+    #define QSM_SIGNAL_TYPE_NONE         ( (qSM_SignalType_t)0xFFFFFFFCuL )
     /**
     * @brief Built-in signal to indicate that a timeout expiration event occurs.
     * @param index The index of the timeout (0, 1, 2... ( @c Q_FSM_MAX_TIMEOUTS-1 ) )
     */
-    #define QSM_SIGNAL_TIMEOUT(index)                                       \
-    ( (qSM_Signal_t)0xFFFFFFFBuL - (qSM_Signal_t)( Q_FSM_MAX_TIMEOUTS - 1 ) \
-    + (qSM_Signal_t)(index) )                                               \
+    #define QSM_SIGNAL_TYPE_TIMEOUT(index)                                       \
+    ( (qSM_SignalType_t)0xFFFFFFFBuL - (qSM_SignalType_t)( Q_FSM_MAX_TIMEOUTS - 1 ) \
+    + (qSM_SignalType_t)(index) )                                               \
 
     /**
     * @brief Timeout-specification option. Should be used to specify the timeout
@@ -132,12 +137,12 @@
     /**
     * @brief Minimum value that can be used for an user-defined signal
     */
-    #define QSM_SIGNAL_RANGE_MIN        ( (qSM_Signal_t)0u )
+    #define QSM_SIGNAL_RANGE_MIN        ( (qSM_SignalType_t)0u )
     /**
     * @brief Maximum value that can be used for an user-defined signal
     */
     #define QSM_SIGNAL_RANGE_MAX                                            \
-    ( (qSM_Signal_t)( 0xFFFFFFFBuL - (qSM_Signal_t)Q_FSM_MAX_TIMEOUTS ) )   \
+    ( (qSM_SignalType_t)( 0xFFFFFFFBuL - (qSM_SignalType_t)Q_FSM_MAX_TIMEOUTS ) )   \
 
     /**
     * @brief The start value for an user-defined signal
@@ -147,7 +152,10 @@
     /**
      * @brief The type to be used as a container variable for a signal.
      */
-    typedef qUINT32_t qSM_Signal_t;
+    typedef struct qSM_Signal_s {
+        qSM_SignalType_t type;
+        void *data;
+    } qSM_Signal_t;
 
     /**
     * @brief This enumeration defines the built-in state-execution status values
@@ -504,7 +512,9 @@
     * (the signal was handled by the state-machine engine).
     * @note The signal-queue has the highest precedence.
     * @param[in] m A pointer to the FSM object.
-    * @param[in] sig The user-defined signal.
+    * @param[in] sigType The user-defined signal type.
+    * @param[in] data A pointer to data.
+    * @param[in] dataSize Size of data to be sent.
     * @param[in] isUrgent If #qTrue, the signal will be sent to the front of the
     * queue. (only if the there is a signal-queue available)
     * @return #qTrue if the provided signal was successfully delivered to the
@@ -512,15 +522,16 @@
     * cannot be inserted because it is full.
     */
     qBool_t qStateMachine_SendSignal( qSM_t * const m,
-                                      qSM_Signal_t sig,
+                                      qSM_SignalType_t sigType,
+                                      void *data,
+                                      size_t dataSize,
                                       const qBool_t isUrgent );
-
     /**
     * @brief Install the Timeout-specification object to target FSM to allow
     * timed signals within states ( See the #QSM_SIGNAL_TIMEOUT signal ).
     * @attention This feature its only available if the FSM has a signal-queue
     * installed.
-    * @pre This feature depends on the @ref q_stimer extension. Make sure the 
+    * @pre This feature depends on the @ref q_stimer extension. Make sure the
     * time base is functional.
     * @note You can increase the number of available timeouts instances by
     * changing the @c Q_FSM_MAX_TIMEOUTS configuration macro inside @c qconfig.h
