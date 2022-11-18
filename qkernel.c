@@ -527,7 +527,8 @@ static void qOS_FSM_TaskCallback( qEvent_t e )
     sm->qPrivate.handler.Data = (void*)e;
     /*cstat +MISRAC2012-Rule-11.8*/
     _QTRACE_KERNEL( "(^)Running state-machine from task ", xTask, sm );
-    (void)qStateMachine_Run( sm, QSM_SIGNAL_NONE );
+    const qSM_Signal_t sig = { QSM_SIGNAL_TYPE_NONE, NULL };
+    (void)qStateMachine_Run( sm, sig );
 }
 #endif /* #if ( Q_FSM == 1) */
 /*============================================================================*/
