@@ -43,9 +43,9 @@ void put_char( void *sp , const char c )
 void sig_handler (int sig)
 {
   if (sig == SIGUSR1 ) {
-    qStateMachine_SendSignal (&basic_state_machine, SYS_SIG_ON, qFalse);
+    qStateMachine_SendSignal (&basic_state_machine, SYS_SIG_ON, NULL, 0, qFalse);
   } else if (sig == SIGUSR2) {
-    qStateMachine_SendSignal (&basic_state_machine, SYS_SIG_OFF, qFalse);
+    qStateMachine_SendSignal (&basic_state_machine, SYS_SIG_OFF, NULL, 0, qFalse);
   }
 }
 
