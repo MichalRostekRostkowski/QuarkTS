@@ -488,7 +488,7 @@ static void qStateMachine_SweepTransitionTable( qSM_State_t * const currentState
         qBool_t transitionAllowed = qTrue; /*allow the transition by default*/
 
         iTransition = &table[ i ]; /*get the i-element from the table*/
-        if ( h->Signal.type == iTransition->xSignal.type ) { /*table entry match*/
+        if ( h->Signal.type == iTransition->xSignalType ) { /*table entry match*/
             if ( NULL != iTransition->guard ) {
                 /*cstat -MISRAC2012-Rule-11.3 -CERT-EXP39-C_d*/
                 /*if signal-guard available, run the guard function*/

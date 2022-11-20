@@ -399,7 +399,7 @@
     * transition table.
     */
     typedef struct _qSM_Transition_s {
-        qSM_SignalType_t xSignal;                           /**< The signal that will produce the transition*/
+        qSM_SignalType_t xSignalType;                       /**< The signal that will produce the transition*/
         qSM_SignalAction_t guard;                           /**< The signal guard/action*/
         qSM_State_t *nextState;                             /**< A pointer to the next state after the transition*/
         qSM_TransitionHistoryMode_t historyMode;            /**< To set the history mode for a transition*/
