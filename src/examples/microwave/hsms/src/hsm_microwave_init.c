@@ -20,23 +20,23 @@ static qSM_State_t microwave_door_opened_state;
 //
 qSM_Transition_t microwave_door_closed_state_transitions [] =
 {
-  { SYS_SIG_OPEN,   NULL, &microwave_door_opened_state,   0},
+  { SYS_SIG_TYPE_OPEN,   NULL, &microwave_door_opened_state,   0},
 };
 
 qSM_Transition_t microwave_off_state_transitions [] =
 {
-  { SYS_SIG_TOAST,  NULL, &microwave_toasting_state,    0},
-  { SYS_SIG_BAKE,   NULL, &microwave_baking_state,      0}
+  { SYS_SIG_TYPE_TOAST,  NULL, &microwave_toasting_state,    0},
+  { SYS_SIG_TYPE_BAKE,   NULL, &microwave_baking_state,      0}
 };
 
 qSM_Transition_t microwave_heating_state_transitions [] =
 {
-  { SYS_SIG_OFFTIMEOUT,  NULL, &microwave_off_state, 0},
+  { SYS_SIG_TYPE_OFFTIMEOUT,  NULL, &microwave_off_state, 0},
 };
 
 qSM_Transition_t microwave_door_opened_state_transitions [] =
 {
-  { SYS_SIG_CLOSE,  NULL, &microwave_door_closed_state, 0}
+  { SYS_SIG_TYPE_CLOSE,  NULL, &microwave_door_closed_state, 0}
 };
 
 //
