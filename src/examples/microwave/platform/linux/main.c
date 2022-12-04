@@ -56,16 +56,16 @@ void *msg_handler (void *p)
     if (n > 0) {
       if (strncmp(buf, "open", 4) == 0) {
         printf("open\n");
-        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_TYPE_OPEN, NULL, 0, qFalse);
+        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_OPEN, qFalse);
       } else if (strncmp(buf, "close", 5) == 0) {
         printf("close\n");
-        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_TYPE_CLOSE, NULL, 0, qFalse);
+        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_CLOSE, qFalse);
       } else if (strncmp(buf, "toast", 4) == 0) {
         printf("toast\n");
-        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_TYPE_TOAST, NULL, 0, qFalse);
+        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_TOAST, qFalse);
       } else if (strncmp(buf, "bake", 4) == 0) {
         printf("bake\n");
-        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_TYPE_BAKE, NULL, 0, qFalse);
+        qStateMachine_SendSignal (&microwave_state_machine, SYS_SIG_BAKE, qFalse);
       }
     }
   }

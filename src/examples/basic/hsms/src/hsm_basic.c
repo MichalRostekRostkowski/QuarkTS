@@ -29,14 +29,14 @@ qSM_Status_t basic_top_state_callback (qSM_Handler_t h)
 {
   qSM_Status_t RetVal = qSM_STATUS_EXIT_SUCCESS;
 
-  switch (h->Signal.type) {
-    case QSM_SIGNAL_TYPE_ENTRY :
+  switch (h-> Signal) {
+    case QSM_SIGNAL_ENTRY :
       qDebug_Message("TOP|E");
       break;
-    case QSM_SIGNAL_TYPE_EXIT :
+    case QSM_SIGNAL_EXIT :
       qDebug_Message("TOP|X");
       break;
-    case QSM_SIGNAL_TYPE_START :
+    case QSM_SIGNAL_START :
       qDebug_Message("TOP|S");
       break;
   }
@@ -48,14 +48,14 @@ qSM_Status_t basic_on_state_callback (qSM_Handler_t h)
 {
   qSM_Status_t RetVal = qSM_STATUS_EXIT_SUCCESS;
 
-  switch (h->Signal.type) {
-    case QSM_SIGNAL_TYPE_ENTRY :
+  switch (h-> Signal) {
+    case QSM_SIGNAL_ENTRY :
       qDebug_Message("ON|E");
       break;
-    case QSM_SIGNAL_TYPE_EXIT :
+    case QSM_SIGNAL_EXIT :
       qDebug_Message("ON|X");
       break;
-    case QSM_SIGNAL_TYPE_START :
+    case QSM_SIGNAL_START :
       qDebug_Message("ON|S");
       break;
   }
@@ -67,14 +67,14 @@ qSM_Status_t basic_off_state_callback (qSM_Handler_t h)
 {
   qSM_Status_t RetVal = qSM_STATUS_EXIT_SUCCESS;
 
-  switch (h->Signal.type) {
-    case QSM_SIGNAL_TYPE_ENTRY :
+  switch (h-> Signal) {
+    case QSM_SIGNAL_ENTRY :
       qDebug_Message("OFF|E");
       break;
-    case QSM_SIGNAL_TYPE_EXIT :
+    case QSM_SIGNAL_EXIT :
       qDebug_Message("OFF|X");
       break;
-    case QSM_SIGNAL_TYPE_START :
+    case QSM_SIGNAL_START :
       qDebug_Message("OFF|S");
       break;
   }
