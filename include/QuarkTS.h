@@ -87,15 +87,11 @@ Read the API reference here ; https://kmilo17pet.github.io/QuarkTS/
         #error Q_PRIO_QUEUE_SIZE its too large.
     #endif
 
-    #if ( ( Q_PS_SIGNALS_MAX > 0 ) && ( Q_PS_SUBS_PER_SIGNAL_MAX > 0 ) )
-        #include "qps.h"
-    #endif
-
 #endif
 
 /**
 *  @defgroup qos Operative System
-*  This section contains the documentation related to all the Interfaces and
+*  This section contains the documentation related to all the Interfaces and 
 *  intrinsic definitions of the operating system.
 */
 
@@ -147,7 +143,7 @@ Read the API reference here ; https://kmilo17pet.github.io/QuarkTS/
 
 /**
 *  @defgroup qmodules Kernel extensions
-*  This section contains the documentation related to all the extensions that
+*  This section contains the documentation related to all the extensions that 
 *  adds additional functionality to the operating system.
 */
 
