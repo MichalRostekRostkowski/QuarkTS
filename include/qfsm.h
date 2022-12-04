@@ -161,11 +161,19 @@
     typedef qUINT32_t qSM_SigId_t;
 
     /**
+     * @brief The type for signal Data.
+     */
+    typedef struct _qSM_SigData_s {
+        qUINT8_t refs;                          /**< Reference counter to data */
+        void *p;                                /**< Pointer to data */
+     } qSM_SigData_t;
+
+    /**
      * @brief The type to be used as a container variable for a signal.
      */
     typedef struct _qSM_Signal_s {
-        qSM_SigId_t id;                         /**< The ID of the signal */
-        void *sigData;                          /**< The data associated to the signal*/
+        qSM_SigId_t   id;                         /**< The ID of the signal */
+        qSM_SigData_t *sigData;                   /**< The data associated to the signal*/
     } qSM_Signal_t;
 
     /**
@@ -416,7 +424,6 @@
         qSM_SignalAction_t guard;                           /**< The signal guard/action*/
         qSM_State_t *nextState;                             /**< A pointer to the next state after the transition*/
         qSM_TransitionHistoryMode_t historyMode;            /**< To set the history mode for a transition*/
-        void *signalData;                                   /**< Data associated with the signal*/
     }
     qSM_Transition_t;
 
@@ -547,6 +554,7 @@
     qBool_t qStateMachine_SendSignal( qSM_t * const m,
                                       qSM_SigId_t sig,
                                       void *sData,
+                                      size_t sDataSize,
                                       const qBool_t isUrgent );
 
     /**
@@ -554,7 +562,7 @@
     * timed signals within states ( See the #QSM_SIGNAL_TIMEOUT signal ).
     * @attention This feature its only available if the FSM has a signal-queue
     * installed.
-    * @pre This feature depends on the @ref q_stimer extension. Make sure the 
+    * @pre This feature depends on the @ref q_stimer extension. Make sure the
     * time base is functional.
     * @note You can increase the number of available timeouts instances by
     * changing the @c Q_FSM_MAX_TIMEOUTS configuration macro inside @c qconfig.h

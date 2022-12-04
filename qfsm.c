@@ -6,6 +6,7 @@
 
 #include "qfsm.h"
 #include "qflm.h"
+#include "qmemmang.h"
 #include <string.h>
 
 #if ( Q_FSM == 1 )
@@ -48,8 +49,13 @@ static void qStateMachine_TimeoutPerformSpecifiedActions( qSM_t * const m,
                                                           const qSM_SigId_t sig );
 static qBool_t qStateMachine_SignalSend( qSM_t * const m,
                                          qSM_SigId_t sig,
-                                         void *sData,
+                                         qSM_SigData_t *sData,
                                          const qBool_t isUrgent );
+
+static qSM_SigData_t* qStateMachine_SigDataAllocate( void const *data,
+                                                     size_t dataSize );
+
+static qBool_t qStateMachine_qSigDataHandled( qSM_SigData_t *sigData );
 
 #define QSM_TSOPT_INDEX_MASK    ( 0x00FFFFFFuL )
 
@@ -282,7 +288,7 @@ static void qStateMachine_PrepareHandler( qSM_UnprotectedHandler_t h,
                                           qSM_State_t * const s )
 {
     h->Signal = sig.id;
-    h->SignalData = sig.sigData;
+    h->SignalData = (NULL != sig.sigData)? sig.sigData->p : NULL;
     h->NextState = NULL;
     h->StartState = NULL;
     h->Status = qSM_STATUS_NULL;
@@ -515,6 +521,10 @@ qBool_t qStateMachine_Run( qSM_t * const m,
         }
     }
 
+    if ( (sig.id > QSM_SIGNAL_RANGE_MIN) && (sig.id < QSM_SIGNAL_RANGE_MAX) ) {
+        (void)qStateMachine_qSigDataHandled( sig.sigData );
+    }
+
     return retValue;
 }
 /*============================================================================*/
@@ -633,7 +643,7 @@ static void qStateMachine_SweepTransitionTable( qSM_State_t * const currentState
         if ( ( h->Signal >= QSM_SIGNAL_TM_RMIN ) && ( h->Signal <= QSM_SIGNAL_TM_RMAX ) ) {
             h->SignalData = NULL; /*ignore signal data on timeout signals*/
         }
-        if ( ( h->Signal == iTransition->xSignal ) && ( h->SignalData == iTransition->signalData ) ) { /*table entry match*/
+        if ( h->Signal == iTransition->xSignal ) { /*table entry match*/
             if ( NULL != iTransition->guard ) {
                 /*cstat -MISRAC2012-Rule-11.3 -CERT-EXP39-C_d*/
                 /*if signal-guard available, run the guard function*/
@@ -655,7 +665,7 @@ static void qStateMachine_SweepTransitionTable( qSM_State_t * const currentState
 /*============================================================================*/
 static qBool_t qStateMachine_SignalSend( qSM_t * const m,
                                          qSM_SigId_t sig,
-                                         void *sData,
+                                         qSM_SigData_t *sData,
                                          const qBool_t isUrgent )
 {
     qBool_t retValue = qFalse;
@@ -678,21 +688,31 @@ static qBool_t qStateMachine_SignalSend( qSM_t * const m,
         retValue = qTrue;
     }
 
+    if ( ( qTrue == retValue ) && ( NULL != sData ) ) {
+        sData->refs++;
+    }
+
     return retValue;
 }
 /*============================================================================*/
 qBool_t qStateMachine_SendSignal( qSM_t * const m,
                                   qSM_SigId_t sig,
-                                  void *sData,
+                                  void *data,
+                                  size_t dataSize,
                                   const qBool_t isUrgent )
 {
     qBool_t retValue = qFalse;
+    qSM_SigData_t *sigData = NULL;
 
     if ( sig < QSM_SIGNAL_NONE ) {
-        if ( NULL != m ) {
-            retValue = qStateMachine_SignalSend( m, sig, sData, isUrgent );
-        }
-        #if ( Q_FSM_PS_SIGNALS_MAX > 0 )  && ( Q_FSM_PS_SUB_PER_SIGNAL_MAX > 0 )
+        sigData = qStateMachine_SigDataAllocate ( data, dataSize );
+
+        if ( ( ( NULL != data ) && ( 0 != dataSize ) && ( NULL != sigData ) ) ||
+             ( ( NULL == data ) && ( 0 == dataSize ) ) ) {
+            if ( NULL != m ) {
+                retValue = qStateMachine_SignalSend( m, sig, sigData, isUrgent );
+            }
+            #if ( Q_FSM_PS_SIGNALS_MAX > 0 ) && ( Q_FSM_PS_SUB_PER_SIGNAL_MAX > 0 )
             else {
                 size_t i, j;
                 const size_t maxSig = (size_t)Q_FSM_PS_SIGNALS_MAX;
@@ -703,14 +723,21 @@ qBool_t qStateMachine_SendSignal( qSM_t * const m,
                         retValue = qTrue;
                         for ( j = 0u ; ( j < maxSub ) && ( NULL != psSubs[ i ][ j ] ) ; ++j ) {
                             /*cstat -MISRAC2012-Rule-10.1_R3 -CERT-EXP46-C*/
-                            retValue &= qStateMachine_SignalSend( psSubs[ i ][ j ], sig, sData, isUrgent );
+                            retValue &= qStateMachine_SignalSend( psSubs[ i ][ j ], sig, sigData, isUrgent );
                             /*cstat +MISRAC2012-Rule-10.1_R3 +CERT-EXP46-C*/
                         }
-                        break;
                     }
                 }
             }
-        #endif
+            #endif
+        }
+
+        if ( NULL != sigData ) {
+            if (sigData->refs < 1u) {
+                /*If sigData was allocated but signal was not send to any FSM, free the memory*/
+                qStateMachine_qSigDataHandled ( sigData );
+            }
+        }
     }
 
     return retValue;
@@ -724,7 +751,7 @@ static void qStateMachine_TimeoutCheckSignals( qSM_t * const m )
     for ( i = 0u ; i < (size_t)Q_FSM_MAX_TIMEOUTS ; ++i ) {
         if ( qTrue == qSTimer_Expired( &ts->builtin_timeout[ i ] ) ) {
             #if ( Q_QUEUES == 1 )
-                (void)qStateMachine_SendSignal( m, QSM_SIGNAL_TIMEOUT( i ), NULL, qFalse );
+                (void)qStateMachine_SendSignal( m, QSM_SIGNAL_TIMEOUT( i ), NULL, 0, qFalse );
             #endif
             if ( 0uL  != ( ts->isPeriodic & ( 1uL <<  i ) ) ) {
                 (void)qSTimer_Reload( &ts->builtin_timeout[ i ] );
@@ -949,5 +976,41 @@ qBool_t qStateMachine_Set_MachineSurrounding( qSM_t * const m,
     return retValue;
 }
 /*============================================================================*/
+static qSM_SigData_t* qStateMachine_SigDataAllocate( void const *data,
+                                                     size_t dataSize )
+{
+    qSM_SigData_t *sigData = NULL;
+
+    if ( ( NULL != data ) && ( 0 != dataSize ) ) {
+        sigData = qMalloc (dataSize + sizeof(qSM_SigData_t));
+        if ( NULL != sigData ) {
+            sigData->refs = 0;
+            sigData->p = (void *)(sigData + sizeof(qSM_SigData_t));
+            (void)memcpy( sigData->p, data, dataSize );
+        }
+    }
+
+    return sigData;
+}
+
+/*============================================================================*/
+static qBool_t qStateMachine_qSigDataHandled( qSM_SigData_t *sigData )
+{
+    qBool_t retValue = qFalse;
+
+    if (NULL != sigData) {
+        retValue = qTrue;
+
+        if (sigData->refs > 0u) {
+            sigData->refs--;
+        }
+
+        if (sigData->refs < 1u) {
+            qFree (sigData);
+        }
+    }
+
+    return retValue;
+}
 
 #endif /*#if ( Q_FSM == 1 )*/
