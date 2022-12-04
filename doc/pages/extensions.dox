@@ -90,7 +90,7 @@
 *      static qSTimer_t timeout = QSTIMER_INITIALIZER;
 *      if ( e->FirstCall ) {
 *          /*Arming the stimer for  3.5 seg*/
-*          qSTimer_Set( &timeout, 3.5 );
+*          qSTimer_Set( &timeout, 3.5f );
 *      }
 *      
 *      /*non-blocking delay, true when timeout expires*/
@@ -205,6 +205,9 @@
 *     - #QSM_SIGNAL_EXIT if the current state has just exit to another state.
 *     - Any other user-defined signal will reside here, including the 
 *     #QSM_SIGNAL_TIMEOUT signals.
+* - qSM_Handler_t::SignalData (read-only) : Pointer to the data associated with
+* the signal. For internal signals, including timeout signals, its value will 
+* be @c NULL.
 * - qSM_Handler_t::TransitionHistory : Use this option if the transition is to 
 * a composite state. This attribute defines how the story should be handled. 
 * If this field is not established, ::qSM_TRANSITION_NO_HISTORY is assumed. 
@@ -255,7 +258,7 @@
 *          case QSM_SIGNAL_EXIT:
 *              break;
 *          case USER_DEFINED_SIGNAL :
-*              h-> NextState = &OtherState ; /*transition*/
+*              h->NextState = &OtherState; /*transition*/
 *              break;
 *          default:
 *              break;
@@ -265,14 +268,14 @@
 *  @endcode 
 *
 * As shown above, the return value represents the exit status of the state, and 
-* it can be handled with an additionalsurrounding callback function \f$ S_u \f$ 
+* it can be handled with an additional surrounding callback function \f$ S_u \f$ 
 * established at the moment of the FSM setup. The values allowed to return are
 * listed below.
 *
-* - ::qSM_STATUS_EXIT_SUCCESS.
-* - ::qSM_STATUS_EXIT_FAILURE.
-* - ::qSM_STATUS_SIGNAL_HANDLED.
-* - Any other integer value between @c -32762 and @c 32767 .
+* - ::qSM_STATUS_EXIT_SUCCESS
+* - ::qSM_STATUS_EXIT_FAILURE
+* - ::qSM_STATUS_SIGNAL_HANDLED
+* - Any other integer value between @c -32762 and @c 32767
 *
 * To code initial transitions, application writer should catch the 
 * #QSM_SIGNAL_START, perform the required actions and then designate the target 
@@ -310,7 +313,7 @@
 * <em>Surrounding callback invocation after and before the current state</em>
 * </center>
 *
-* The surrounding callback \f$ S_u \f$ invocation occurs afther and befor the
+* The surrounding callback \f$ S_u \f$ invocation occurs after and before the
 * current state \f$ P \f$. When the surrounding callback is executed, indicates 
 * its own checkpoint through the @c Status attribute of the qSM_Handler_t 
 * argument.
@@ -343,7 +346,7 @@
 *  @endcode 
 *
 * As you can see in the example below, the surrounding execution case its 
-* checked through the FSM handle by reading the @c Status field.
+* verified through the FSM handle by reading the @c Status field.
 *
 * @subsection q_fsm_astask Adding a state machine as a task
 * The best strategy to run a FSM is delegating it to a task. For this, the 
@@ -419,7 +422,7 @@
 *  @code{.c}
 *  qTask_t LED_Task; /*The task node*/
 *  qSM_t LED_FSM; /*The state -machine handle*/
-*  qSM_State_t State_LEDOff , State_LEDOn , State_LEDBlink ;
+*  qSM_State_t State_LEDOff, State_LEDOn, State_LEDBlink;
 *  @endcode 
 *
 * Then, we define our states as the flow-diagram showed in the figure above.
@@ -445,7 +448,7 @@
 *      static qSTimer_t timeout;
 *      switch ( h->Signal ) {
 *          case QSM_SIGNAL_ENTRY:
-*              qSTimer_Set( &timeout, 10.0 ); /*STimer gets armed*/
+*              qSTimer_Set( &timeout, 10.0f ); /*STimer gets armed*/
 *              BSP_LED_ON();
 *              break;
 *          case QSM_SIGNAL_EXIT: case QSM_SIGNAL_START: /*Ignore*/
@@ -462,21 +465,21 @@
 *      return qSM_STATUS_EXIT_SUCCESS;
 *  }
 *  /*---------------------------------------------------------------------*/
-*  qSM_Status_t State_LEDBlink_Callback( qSM_Handler_t h ){
+*  qSM_Status_t State_LEDBlink_Callback( qSM_Handler_t h ) {
 *      static qSTimer_t timeout; 
 *      static qSTimer_t blinktime;
 *      
 *      switch ( h->Signal ) {
 *          case QSM_SIGNAL_ENTRY:
-*              qSTimer_Set( &timeout, 10.0 );
+*              qSTimer_Set( &timeout, 10.0f );
 *              break;
 *          case QSM_SIGNAL_EXIT: case QSM_SIGNAL_START: /*Ignore*/
-*              break;    
+*              break;
 *          default:
 *              if ( qSTimer_Expired( &timeout ) || BUTTON_PRESSED ) {
 *                  h->NextState = &State_LEDOff;
 *              }
-*              if ( qSTimer_FreeRun( &blinktime, 0.5 ) ) {
+*              if ( qSTimer_FreeRun( &blinktime, 0.5f ) ) {
 *                 BSP_LED_TOGGLE();
 *              }
 *              break;
@@ -497,8 +500,7 @@
 *                                State_LEDOn_Callback , NULL , NULL );
 *  qStateMachine_StateSubscribe( &LED_FSM , &State_LEDBlink , NULL ,
 *                                State_LEDBlink_Callback , NULL , NULL );
-*  qOS_Add_StateMachineTask( &LED_Task , &LED_FSM , qHigh_Priority ,
-*                            0.1, qEnabled , NULL );
+*  qOS_Add_StateMachineTask( &LED_Task , &LED_FSM , qHigh_Priority , 0.1f, qEnabled , NULL );
 *  @endcode 
 *
 * @subsection q_fsmsendsignals Sending signals
@@ -508,27 +510,27 @@
 * receives the signal and holds it until the state-machine can evaluate it.
 *
 * When coding state-machines, the application writer can benefit from this 
-* simple eventabstraction mechanism. On the one hand, there would be a more 
+* simple event-abstraction mechanism. On the one hand, there would be a more 
 * uniform programming when writing states callbacks and on the other hand, the 
 * communication of the state machine from other contexts becomes easier.
 *
 * To send a signal to a state machine, use the qStateMachine_SendSignal() API.
 * This API can manage their delivery to one of these possible destinations: 
-* an exclusion variable or a signal queue:
-* - An exclusion variable its a variable with an important distinction, it can 
-* only be written if it is empty. The empty situation only happens, if the 
-* engine has already propagated the signal within the state machine. If the 
+* an <em>exclusion variable</em> or a <em>signal queue</em>:
+* - An <em>exclusion variable</em> its a variable with an important distinction,
+* it can only be written if it is empty. The empty situation only happens, if 
+* the engine has already propagated the signal within the state machine. If the 
 * signal has not yet propagated, the signal sending cannot be carried out.
-* - When a signal queue is used, the signal is put into a FIFO structure and 
-* the engine takes care of dispatching the signal in an orderly manner. The only
-* situation where the signal cannot be delivered is if the queue is full. 
+* - When a <em>signal queue</em> is used, the signal is put into a FIFO structure
+* and the engine takes care of dispatching the signal in an orderly manner. The 
+* only situation where the signal cannot be delivered is if the queue is full. 
 * This its the preferred destination, as long as there is a previously 
 * installed signal queue.
 *
 * @note If the signal-queue its available, the qStateMachine_SendSignal() will
 * always select it as destination.
 * @warning If a state-machine, a task, or another context sends a signal to a 
-* full queue, an queue-overflow occurs. The result of the queue overflow it that
+* full queue, a queue-overflow occurs. The result of the queue overflow it that
 * the state-machine drops the new signal.
 * 
 * @subsection q_fsminstallsignalqueue Installing a signal queue
@@ -570,11 +572,11 @@
 * <center>
 * <table>
 * <caption id="multi_row">Transition table layout for a state</caption>
-* <tr><th>Signal  <th>Signal action/guard <th>Target state   <th>History mode
-* <tr><td> @c Signal1 <td>@c NULL <td>@c StateB <td>@c 0
-* <tr><td> @c Signal3 <td>@c DoOnSignal3 <td>@c StateD <td>@c 0
-* <tr><td> ... <td>... <td> ... <td> ...
-* <tr><td> @c Signal6 <td>@c NULL <td>@c StateA <td>@c 0
+* <tr><th>Signal Id <th>Signal action/guard <th>Target state  <th>History mode  <th>Signal data
+* <tr><td> @c Signal1 <td>@c NULL <td>@c StateB <td>@c 0 <td>@c NULL
+* <tr><td> @c Signal3 <td>@c DoOnSignal3 <td>@c StateD <td>@c 0 <td>@c &sig3data
+* <tr><td> ... <td>... <td> ... <td> ... <td> ...
+* <tr><td> @c Signal6 <td>@c NULL <td>@c StateA <td>@c 0 <td>@c NULL
 * </table>
 * </center>
 *
@@ -609,10 +611,10 @@
 *  @endcode 
 *
 * The return value is checked after to allow or reject the state transition. The
-* application writer can code a boolean expression to implement statechart 
-* guards or perform some pre-transition procedure.
+* application writer can code a boolean expression to implement 
+* <em>statechart guards</em> or perform some pre-transition procedure.
 * 
-* @remark If a signal-action returns qFalse, the event-signal is rejected, 
+* @remark If a signal-action returns \ref qFalse, the event-signal is rejected, 
 * preventing the state transition to be performed in the calling FSM.
 * @note When a transition entry is defined. the signal-action should be located
 * as the third parameter of the entry. Please see the transition layout. A
@@ -622,7 +624,7 @@
 * A timeout specification is mechanism to simplify the notion of time passage
 * inside states. The basic usage model of the timeout signals is as follows:
 *
-* An timeout specification allocates one or more timer objects. The user relates
+* A timeout specification allocates one or more timer objects. The user relates
 * in a table each specific timeout operations within the state where are they 
 * going to operate. So, according to the table, when a state needs to arrange 
 * for a timeout, the engine can set or reset the given timer. When the FSM 
@@ -654,7 +656,7 @@
 * detailed as follows:
 *
 * - #QSM_TSOPT_INDEX(index) : To select the timeout to be used in the 
-* specification. Should be a value between 0 and @c Q_FSM_MAX_TIMEOUTS-1 
+* specification. Should be a value between @c 0 and @c Q_FSM_MAX_TIMEOUTS-1 
 * - #QSM_TSOPT_SET_ENTRY : To set the timeout when the specified state its 
 * entering.
 * - #QSM_TSOPT_RST_ENTRY : To reset the timeout when the specified state its 
@@ -666,6 +668,8 @@
 * in a reset state.
 * - #QSM_TSOPT_PERIODIC : To put the timeout in periodic mode.
 * 
+* @note Data associated to timeout signals should be set to @c NULL. Any other
+* value will be ignored and will be passed as @c NULL to the FSM handler.
 * @attention The user is responsible for writing timeout specifications 
 * correctly. Care must be taken that the specifications do not collide between 
 * hierarchical states to avoid overwriting operations.
@@ -681,40 +685,40 @@
 *
 *  @code{.c}
 *  /*define the FSM application event-signals*/
-*  #define SIGNAL_BUTTON_PRESSED   ( (qSM_Signal_t)1 )
-*  #define SIGNAL_TIMEOUT          (QSM_SIGNAL_TIMEOUT(0))
-*  #define SIGNAL_BLINK            (QSM_SIGNAL_TIMEOUT(1))
+*  #define SIGNAL_BUTTON_PRESSED   ( (qSM_SigId_t)1 )
+*  #define SIGNAL_TIMEOUT          ( QSM_SIGNAL_TIMEOUT(0) )
+*  #define SIGNAL_BLINK            ( QSM_SIGNAL_TIMEOUT(1) )
 *  
 *  qTask_t LED_Task; /*The task node*/
 *  qSM_t LED_FSM; /*The state-machine handler*/
 *  qSM_State_t State_LEDOff, State_LEDOn, State_LEDBlink;
 *  qQueue_t LEDsigqueue; /*the signal-queue*/ 
-*  qSM_Signal_t led_sig_stack[5];  /*the signal-queue storage area*/
+*  qSM_Signal_t led_sig_stack[ 5 ];  /*the signal-queue storage area*/
 *  qSM_TimeoutSpec_t tm_spectimeout;
 *  
 *  /*create the transition tables for every state*/
 *  qSM_Transition_t LEDOff_transitions[] = {
-*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDOn    ,0},
+*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDOn    , 0, NULL}
 *  };
 *  
 *  qSM_Transition_t LEDOn_transitions[] = {
-*      { SIGNAL_TIMEOUT,        NULL, &State_LEDOff   ,0},
-*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDBlink ,0},
+*      { SIGNAL_TIMEOUT,        NULL, &State_LEDOff   , 0, NULL},
+*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDBlink , 0, NULL}
 *  };
 *  
 *  qSM_Transition_t LEDBlink_transitions[] = {
-*      { SIGNAL_TIMEOUT,        NULL, &State_LEDOff   ,0},
-*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDOff   ,0}
+*      { SIGNAL_TIMEOUT,        NULL, &State_LEDOff   , 0, NULL},
+*      { SIGNAL_BUTTON_PRESSED, NULL, &State_LEDOff   , 0, NULL}
 *  };
 *  
 *  /*define the timeout specifications */
-*  qSM_TimeoutStateDefinition_t LedOn_Timeouts[]={
+*  qSM_TimeoutStateDefinition_t LedOn_Timeouts[] = {
 *      { 10.0f,  QSM_TSOPT_INDEX(0) | QSM_TSOPT_SET_ENTRY | QSM_TSOPT_RST_EXIT  },
 *  };
 *  
-*  qSM_TimeoutStateDefinition_t LEDBlink_timeouts[]={
+*  qSM_TimeoutStateDefinition_t LEDBlink_timeouts[] = {
 *      { 10.0f,  QSM_TSOPT_INDEX(0) | QSM_TSOPT_SET_ENTRY | QSM_TSOPT_RST_EXIT  },
-*      { 0.5f,   QSM_TSOPT_INDEX(1) | QSM_TSOPT_SET_ENTRY | QSM_TSOPT_RST_EXIT | QSM_TSOPT_PERIODIC  },
+*      { 0.5f,   QSM_TSOPT_INDEX(1) | QSM_TSOPT_SET_ENTRY | QSM_TSOPT_RST_EXIT | QSM_TSOPT_PERIODIC  }
 *  };
 *  @endcode 
 *
@@ -749,7 +753,7 @@
 *              BSP_LED_TOGGLE();
 *              break;
 *          default:
-*              break;        
+*              break;
 *      }
 *      return qSM_STATUS_EXIT_SUCCESS;
 *  }
@@ -762,10 +766,10 @@
 * transition table can be installed with the other required objects.
 *
 *  @code{.c}
-*  qStateMachine_Setup( &LED_FSM, NULL, &State_LEDOff, NULL, NULL ); 
-*  qStateMachine_StateSubscribe( &LED_FSM, &State_LEDOff, QSM_STATE_TOP, State_LEDOff_Callback, NULL, NULL ); 
+*  qStateMachine_Setup( &LED_FSM, NULL, &State_LEDOff, NULL, NULL );
+*  qStateMachine_StateSubscribe( &LED_FSM, &State_LEDOff, QSM_STATE_TOP, State_LEDOff_Callback, NULL, NULL );
 *  qStateMachine_StateSubscribe( &LED_FSM, &State_LEDOn, QSM_STATE_TOP, State_LEDOn_Callback, NULL, NULL );
-*  qStateMachine_StateSubscribe( &LED_FSM, &State_LEDBlink, QSM_STATE_TOP, State_LEDBlink_Callback, NULL, NULL ); 
+*  qStateMachine_StateSubscribe( &LED_FSM, &State_LEDBlink, QSM_STATE_TOP, State_LEDBlink_Callback, NULL, NULL );
 *  
 *  qQueue_Setup( &LEDsigqueue, led_sig_stack, sizeof(qSM_Signal_t), qFLM_ArraySize(led_sig_stack) );
 *  qStateMachine_InstallSignalQueue( &LED_FSM, &LEDsigqueue );
@@ -778,7 +782,7 @@
 *  qStateMachine_Set_StateTransitions( &State_LEDOn, LEDOn_transitions, qFLM_ArraySize(LEDOn_transitions) );
 *  qStateMachine_Set_StateTransitions( &State_LEDBlink, LEDBlink_transitions, qFLM_ArraySize(LEDBlink_transitions) );
 *  
-*  qOS_Add_StateMachineTask(  &LED_Task, &LED_FSM, qMedium_Priority, 0.1f, qEnabled, NULL  );   
+*  qOS_Add_StateMachineTask( &LED_Task, &LED_FSM, qMedium_Priority, 0.1f, qEnabled, NULL );
 *  @endcode 
 *
 * @subsection qfsm_happroach Using the hierarchical approach
@@ -824,18 +828,18 @@
 * The figure above illustrate the modeling of this system with the 
 * "Automated Control" state acting as composite.
 *
-* Before getting started, the required user-defined signals, variables, and entries of the
-* transition table should be defined:
+* Before getting started, the required user-defined signals, variables, and 
+* entries of the transition table should be defined:
 * 
 *  @code{.c}
-*  #define  SIGNAL_ENGINE_ON           ((qSM_Signal_t)(1))   
-*  #define  SIGNAL_ACCEL               ((qSM_Signal_t)(2))
-*  #define  SIGNAL_RESUME              ((qSM_Signal_t)(3))
-*  #define  SIGNAL_OFF                 ((qSM_Signal_t)(4))
-*  #define  SIGNAL_BRAKE_PRESSED       ((qSM_Signal_t)(5))
-*  #define  SIGNAL_CRUISE              ((qSM_Signal_t)(6))     
-*  #define  SIGNAL_REACHED_CRUISING    ((qSM_Signal_t)(7))
-*  #define  SIGNAL_ENGINE_OFF          ((qSM_Signal_t)(8))
+*  #define  SIGNAL_ENGINE_ON           ( (qSM_SigId_t)(1) )
+*  #define  SIGNAL_ACCEL               ( (qSM_SigId_t)(2) )
+*  #define  SIGNAL_RESUME              ( (qSM_SigId_t)(3) )
+*  #define  SIGNAL_OFF                 ( (qSM_SigId_t)(4) )
+*  #define  SIGNAL_BRAKE_PRESSED       ( (qSM_SigId_t)(5) )
+*  #define  SIGNAL_CRUISE              ( (qSM_SigId_t)(6) )
+*  #define  SIGNAL_REACHED_CRUISING    ( (qSM_SigId_t)(7) )
+*  #define  SIGNAL_ENGINE_OFF          ( (qSM_SigId_t)(8) )
 *  
 *  qTask_t CruiseControlTask;
 *  qSM_t Top_SM;
@@ -846,47 +850,47 @@
 *  qSM_State_t state_accelerating, state_cruising, state_resuming;
 *  
 *  qQueue_t top_sigqueue;
-*  qSM_Signal_t topsm_sig_stack[10];
+*  qSM_Signal_t topsm_sig_stack[ 10 ];
 *  
 *  /*=======================================================================*/
 *  /*                             TRANSITION TABLES                         */
 *  /*=======================================================================*/
 *  qSM_Transition_t idle_transitions[] =
 *  {
-*  { SIGNAL_ENGINE_ON, SigAct_ClearDesiredSpeed, &state_initial      ,0 },
+*  { SIGNAL_ENGINE_ON, SigAct_ClearDesiredSpeed, &state_initial      , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t initial_transitions[] =
 *  {
-*  { SIGNAL_ACCEL,     SigAct_BrakeOff,          &state_accelerating ,0 },
+*  { SIGNAL_ACCEL,     SigAct_BrakeOff,          &state_accelerating , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t accel_transitions[] =
 *  {
-*  { SIGNAL_CRUISE,     NULL,                    &state_cruising     ,0 },
+*  { SIGNAL_CRUISE,     NULL,                    &state_cruising     , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t cruising_transitions[] =
 *  {
-*  { SIGNAL_OFF,       NULL,                     &state_cruisingoff  ,0 },
-*  { SIGNAL_ACCEL,     NULL,                     &state_accelerating ,0 },
+*  { SIGNAL_OFF,       NULL,                     &state_cruisingoff  , 0, NULL },
+*  { SIGNAL_ACCEL,     NULL,                     &state_accelerating , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t resuming_transitions[] =
 *  {
-*  { SIGNAL_ACCEL,     NULL,                     &state_accelerating ,0 },
+*  { SIGNAL_ACCEL,      NULL,                    &state_accelerating , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t cruisingoff_transitions[] =
-*  {   
-*  { SIGNAL_ACCEL,      SigAct_BrakeOff,         &state_accelerating ,0 },
-*  { SIGNAL_RESUME,     SigAct_BrakeOff,         &state_resuming     ,0 },
-*  { SIGNAL_ENGINE_OFF, NULL,                    &state_idle         ,0 },
+*  {
+*  { SIGNAL_ACCEL,      SigAct_BrakeOff,         &state_accelerating , 0, NULL },
+*  { SIGNAL_RESUME,     SigAct_BrakeOff,         &state_resuming     , 0, NULL },
+*  { SIGNAL_ENGINE_OFF, NULL,                    &state_idle         , 0, NULL }
 *  };
 *  
 *  qSM_Transition_t automated_transitions[] =
-*  {       
-*  { SIGNAL_BRAKE_PRESSED,   NULL,               &state_cruisingoff  ,0 },
+*  {
+*  { SIGNAL_BRAKE_PRESSED,   NULL,               &state_cruisingoff  , 0, NULL }
 *  };
 *  /*---------------------------------------------------------------------*/
 *  @endcode 
@@ -916,7 +920,7 @@
 *          case QSM_SIGNAL_ENTRY:
 *              break;
 *          case QSM_SIGNAL_EXIT:
-*              break;           
+*              break;
 *      } 
 *      return RetVal;
 *  }
@@ -938,7 +942,7 @@
 *      return qSM_EXIT_SUCCESS;
 *  }
 *  /*---------------------------------------------------------------------*/
-*  qSM_Status_t state_automatedcontrol_callback( qSM_Handler_t h  {
+*  qSM_Status_t state_automatedcontrol_callback( qSM_Handler_t h ) {
 *      /*TODO : state activities*/
 *      return qSM_EXIT_SUCCESS;
 *  }
@@ -952,7 +956,7 @@
 *              break;
 *          default:
 *              Speed_Increase();
-*              break;        
+*              break;
 *      }
 *      return qSM_EXIT_SUCCESS;
 *  }
@@ -974,8 +978,8 @@
 *  @code{.c}
 *  qStateMachine_Setup( &Top_SM, state_top_callback, &state_idle, NULL, NULL );
 *  /*subscribe to the highest level states*/
-*  qStateMachine_StateSubscribe( &Top_SM, &state_idle, QSM_STATE_TOP, state_idle_callback, NULL, NULL ); 
-*  qStateMachine_StateSubscribe( &Top_SM, &state_initial, QSM_STATE_TOP, state_initial_callback, NULL, NULL ); 
+*  qStateMachine_StateSubscribe( &Top_SM, &state_idle, QSM_STATE_TOP, state_idle_callback, NULL, NULL );
+*  qStateMachine_StateSubscribe( &Top_SM, &state_initial, QSM_STATE_TOP, state_initial_callback, NULL, NULL );
 *  qStateMachine_StateSubscribe( &Top_SM, &state_cruisingoff, QSM_STATE_TOP, state_cruisingoff_callback, NULL, NULL );
 *  qStateMachine_StateSubscribe( &Top_SM, &state_automatedcontrol, QSM_STATE_TOP, state_automatedcontrol_callback, NULL, NULL );
 *  /*subscribe to the states within the state_automatedcontrol*/
@@ -994,7 +998,7 @@
 *  qStateMachine_Set_StateTransitions( &state_resuming, resuming_transitions, qFLM_ArraySize(resuming_transitions) );
 *  qStateMachine_Set_StateTransitions( &state_cruising, cruising_transitions, qFLM_ArraySize(cruising_transitions) );
 *  
-*  qOS_Add_StateMachineTask(  &CruiseControlTask, &Top_SM, qMedium_Priority, 0.1f, qEnabled, NULL  );  
+*  qOS_Add_StateMachineTask(  &CruiseControlTask, &Top_SM, qMedium_Priority, 0.1f, qEnabled, NULL );
 *  @endcode
 * 
 * @subsubsection q_fsm_example4 Example with history pseudo-states
@@ -1002,8 +1006,8 @@
 * events that require immediate attention; however, after handling them, the 
 * system should return to the most recent substate of the given composite state.
 * UML statecharts address this situation with two kinds of history pseudostates:
-* @a "shallow history" and @a "deep history"( denoted as the circled H and H* 
-* icon respectively in figure).
+* @a "shallow history" and @a "deep history"( denoted as the circled @c H and 
+* @c H* icon respectively in figure).
 *
 * <center>
 * @htmlonly
@@ -1034,39 +1038,39 @@
 * of the transition as shown below:
 *
 *  @code{.c}
-*  #define SIGNAL_A ((qSM_Signal_t)(1))
-*  #define SIGNAL_B ((qSM_Signal_t)(2))
-*  #define SIGNAL_C ((qSM_Signal_t)(3))
-*  #define SIGNAL_D ((qSM_Signal_t)(4))
-*  #define SIGNAL_E ((qSM_Signal_t)(5))
-*  #define SIGNAL_F ((qSM_Signal_t)(6))
+*  #define SIGNAL_A ( (qSM_SigId_t)(1) )
+*  #define SIGNAL_B ( (qSM_SigId_t)(2) )
+*  #define SIGNAL_C ( (qSM_SigId_t)(3) )
+*  #define SIGNAL_D ( (qSM_SigId_t)(4) )
+*  #define SIGNAL_E ( (qSM_SigId_t)(5) )
+*  #define SIGNAL_F ( (qSM_SigId_t)(6) )
 *
 *  qQueue_t sigqueue;
-*  qSM_Signal_t topsm_sig_stack [10];
+*  qSM_Signal_t topsm_sig_stack[ 10 ];
 *  qSM_t super;
 *  qSM_State_t state1 , state2 , state3 , state4 , state5 , state6;
 *
 *  qSM_Transition_t state1_transitions [] = {
-*      { SIGNAL_A , NULL , &state2 , qSM_TRANSITION_SHALLOW_HISTORY },
-*      { SIGNAL_B , NULL , &state2 , qSM_TRANSITION_DEEP_HISTORY },
-*      { SIGNAL_C , NULL , &state2 , qSM_TRANSITION_NO_HISTORY },
+*      { SIGNAL_A , NULL , &state2 , qSM_TRANSITION_SHALLOW_HISTORY, NULL },
+*      { SIGNAL_B , NULL , &state2 , qSM_TRANSITION_DEEP_HISTORY, NULL },
+*      { SIGNAL_C , NULL , &state2 , qSM_TRANSITION_NO_HISTORY, NULL }
 *  };
 *
 *  qSM_Transition_t state2_transitions [] = {
-*      { SIGNAL_D , NULL , &state1 , 0 },
+*      { SIGNAL_D , NULL , &state1 , 0, NULL }
 *  };
 *
 *  qSM_Transition_t state3_transitions [] = {
-*      { SIGNAL_E , NULL , &state4 , 0 },
+*      { SIGNAL_E , NULL , &state4 , 0, NULL }
 *  };
 *
 *  qSM_Transition_t state5_transitions [] = {
-*      { SIGNAL_F , NULL , &state6 , 0 },
+*      { SIGNAL_F , NULL , &state6 , 0, NULL }
 *  };
 *  @endcode
 *
-* Next, the configuration and topology of the state-machine is presented, 
-* including the default transitions (the small circles filled with black). 
+* Next, the configuration and topology of the state-machine is presented,
+* including the default transitions (the small circles filled with black).
 * Please do not forget to define the callbacks for each state.
 *
 *  @code{.c}
@@ -1198,22 +1202,22 @@
 *  @code{.c}
 *  void Sender_Task( qEvent_t e ) {
 *      static qSTimer_t timeout;
-*      qCR_Begin {                  
+*      qCR_Begin {
 *          Send_Packet();
 *          /* Wait until an acknowledgment has been received, or until
 *           * the timer expires. If the timer expires, we should send
-*           * the packet again. 
+*           * the packet again.
 *           */
 *          qSTimer_Set( &timeout, TIMEOUT_TIME );
-*          qCR_WaitUntil( PacketACK_Received() ||  qSTimer_Expired(&timeout));
+*          qCR_WaitUntil( PacketACK_Received() || qSTimer_Expired(&timeout));
 *      }qCR_End;
 *  }
 *  /*===================================================================*/
 *  void Receiver_Task( qEvent_t e ) {
-*      qCR_Begin {                  
+*      qCR_Begin {
 *          /* Wait until a packet has been received*/
 *          qCR_WaitUntil( Packet_Received() );
-*          Send_Acknowledgement();  
+*          Send_Acknowledgement();
 *      } qCR_End;
 *  }
 *  @endcode
@@ -1300,7 +1304,7 @@
 *              qCR_SemWait( &empty );
 *              qCR_SemWait( &mutex );
 *      
-*              consume_item( get_from_buffer() );    
+*              consume_item( get_from_buffer() );
 *              qCR_SemSignal( &mutex );
 *              qCR_SemSignal( &full );
 *          }
@@ -1311,13 +1315,13 @@
 *      /*nothing to do*/
 *  } 
 *  /*===================================================================*/
-*  int main(void) { 
+*  int main(void) {
 *      HAL_Init();
 *    
 *      qOS_Setup( HAL_GetTick, 0.001, IdleTask_Callback );
 *      qCR_SemInit( &empty, 0 );
 *      qCR_SemInit( &full, BUFSIZE );
-*      qCR_SemInit( &mutex, 1 );	
+*      qCR_SemInit( &mutex, 1 );
 *      
 *      qOS_Add_Task( &ProducerTask, ProducerTask_Callback,
 *                    qMedium_Priority, 0.1, qPeriodic, qEnabled, NULL );
@@ -1418,22 +1422,22 @@
 * 
 * As seen in figure, the CLI has a few components described below:
 *
-* - Input Handler : It is responsible for collecting incoming data from the input 
-* in the form of ASCII characters inside a buffer. When this buffer is ready by 
-* receiving an EOL(End-Of-Line) byte, it notifies the validator to perform the
-* initial checks.
-* - Validator: Take the input string and perform three checks over it:
+* - <b>Input Handler</b> : It is responsible for collecting incoming data from 
+* the input in the form of ASCII characters inside a buffer. When this buffer is
+* ready by receiving an EOL(End-Of-Line) byte, it notifies the validator to 
+* perform the initial checks.
+* - <b>Validator</b> : Take the input string and perform three checks over it:
 *   -# The input matches one of the subscribed commands.
 *   -# The input matches one of the default commands.
 *   -# The input is unknown
-* - Pre-Parser: Takes the input if the validator asserts the first check. It is 
-* responsible for syntax validation and classification. Also, prepares the input 
-* argument for the next component.
-* - Callback or Post-Parser: If input at the pre-parser is valid, the respective 
-* command callback is invoked. Here, the application writer is free to handle 
-* the command execution and the output response.
-* - Output printer : Takes all the return status of the previous components to 
-* print out a response at the output.
+* - <b>Pre-Parser</b> : Takes the input if the validator asserts the first check.
+* It is responsible for syntax validation and classification. Also, prepares the
+* input argument for the next component.
+* - <b>Callback or Post-Parser</b> : If input at the pre-parser is valid, the 
+* respective command callback is invoked. Here, the application writer is free 
+* to handle the command execution and the output response.
+* - <b>Output printer</b> : Takes all the return status of the previous 
+* components to print out a response at the output.
 * 
 * @remark Here, @a Input and @a Output should be provided by the application 
 * writer, for example, if a UART interface is chosen, the input should take 
@@ -1460,12 +1464,13 @@
 *     here. Example @c "AT+CMD=?"
 *     - Parameter Set (::qATCLI_CMDTYPE_PARA) : These types of commands allow 
 *     n arguments to be passed for setting parameters, for example: @c AT+CMD=x,y
-*  If none of the types is given at the input, the command response will be ERROR
+*  If none of the types is given at the input, the command response will be 
+*  @c ERROR
 * - The possible output responses are:
 *     - @c OK: Indicates the successful execution of the command.
 *     - @c ERROR: A generalized message to indicate failure in executing the command.
 *     - @c UNKNOWN : The input command its not subscribed.
-*     - @c NOT ALLOWED : The command syntax is not one of the allowed types.
+*     - <tt>NOT ALLOWED</tt> : The command syntax is not one of the allowed types.
 *     - User-defined: A custom output message defined by the application writer.
 *     - @c NONE : No response.
 *
@@ -1538,7 +1543,7 @@
 *                       arg2 = h->GetArgFlt( 2 ); /*get the second argument as float*/
 *                   }
 *              }
-*              sprintf( h->Output, "arg1 = %d arg2 = %f", arg1, arg2);
+*              sprintf( h->Output, "arg1 = %d arg2 = %f", arg1, arg2 );
 *              Response = qATCLI_NORESPONSE;
 *              break;
 *          case qATCLI_CMDTYPE_TEST:
@@ -1620,15 +1625,15 @@
 * First, lets get started defining the required objects to setup the CLI instance:
 *
 *  @code{.c}
-*  #define CLI_MAX_INPUT_BUFF_SIZE         (128)
-*  #define CLI_MAX_OUTPUT_BUFF_SIZE        (128)
+*  #define CLI_MAX_INPUT_BUFF_SIZE         ( 128 )
+*  #define CLI_MAX_OUTPUT_BUFF_SIZE        ( 128 )
 *  
 *  qTask_t CLI_Task;
 *  qATCLI_t CLI_Object;
 *  qATCLI_Command_t AT_GPIO, AT_INFO;
 *  
-*  char CLI_Input[AT_CLI_MAX_INPUT_BUFF_SIZE];
-*  char CLI_Output[AT_CLI_MAX_OUTPUT_BUFF_SIZE];
+*  char CLI_Input[ AT_CLI_MAX_INPUT_BUFF_SIZE ];
+*  char CLI_Output[ AT_CLI_MAX_OUTPUT_BUFF_SIZE ];
 *  
 *  /*Command callbacks*/
 *  qATCLI_Response_t AT_GPIO_Callback( qATCLI_Handler_t h );
@@ -1647,14 +1652,14 @@
 *  /*==================================================================*/
 *  int main( void ) {
 *      HAL_Setup();
-*      qOS_Setup( HAL_GetTick, TIMER_TICK, NULL );   
+*      qOS_Setup( HAL_GetTick, TIMER_TICK, NULL );
 *      qATCLI_Setup( &CLI_Object, BSP_UART_PUTC, CLI_Input, sizeof(CLI_Input), 
 *                    CLI_Output, sizeof(CLI_Output) );
 *      
 *      qATCLI_CmdSubscribe( &CLI_Object, &AT_GPIO, "at+gpio", AT_GPIO_Callback, 
 *                           QATCLI_CMDTYPE_ACT | QATCLI_CMDTYPE_READ | 
 *                           QATCLI_CMDTYPE_TEST | QATCLI_CMDTYPE_PARA | 0x22, NULL );
-*      qATCLI_CmdSubscribe( &CLI_Object, &AT_GPIO, "at+gpio", AT_GPIO_Callback, 
+*      qATCLI_CmdSubscribe( &CLI_Object, &AT_INFO, "at+info", AT_INFO_Callback, 
 *                           QATCLI_CMDTYPE_ACT, NULL );
 *      qOS_Add_ATCLITask( &CLI_Task, &CLI_Object, qLowest_Priority );
 *      qOS_Run();
@@ -1691,7 +1696,7 @@
 *              h->puts( "+gpio=<pin>,<value>\r\n" );
 *              h->puts( "+gpio?\r\n" );
 *              RetValue = qATCLI_NORESPONSE;
-*              break;    		
+*              break;
 *          case qATCLI_CMDTYPE_READ: /*< AT+gpio? */
 *              sprintf( h->Output, "0x%08X", HAL_GPIO_Read( GPIOA ) );
 *              RetValue = qATCLI_NORESPONSE;
@@ -1716,7 +1721,7 @@
 *              strcpy( h->Output, "Compilation: " __DATE__ " " __TIME__ );
 *              RetValue = qATCLI_NORESPONSE;
 *              break;
-*          default : 
+*          default :
 *              break;
 *      }
 * 
@@ -1737,8 +1742,8 @@
 * microcontrollers or their implementation can be relatively large, taking up 
 * valuable code space. Also, there is a range of unspecified and 
 * implementation-defined behaviour associated with dynamic memory allocation, as
-* well as a number of other potential pitfalls. Additionally, some implementations can
-* suffer from fragmentation.
+* well as a number of other potential pitfalls. Additionally, some implementations
+* can suffer from fragmentation.
 *
 * To get around this problem, the OS provides its own memory-management 
 * interface for dynamic allocation as a fully kernel-independent extension. When 
@@ -1838,11 +1843,11 @@
 *      ydata = (int*)qMalloc( n*sizeof(int) ); 
 *      
 *      /*use the memory if could be allocated*/
-*      if ( xdata && ydata && xyoper ) { 
-*          for ( i=0; i<n; i++ ) {
-*              xdata[i] = GetXData();
-*              ydata[i] = GetYData();
-*              xyoper[i] = xdata[i] * ydata[i];
+*      if ( xdata && ydata && xyoper ) {
+*          for ( i = 0 ; i < n ; i++ ) {
+*              xdata[ i ] = GetXData();
+*              ydata[ i ] = GetYData();
+*              xyoper[ i ] = xdata[ i ]*ydata[ i ];
 *          }
 *          UseTheMemmory(xyoper);
 *      }
@@ -1857,13 +1862,12 @@
 *  }
 *  
 *  int main(void) {
-*      char area_another_heap[512]={0};
+*      char area_another_heap[ 512 ] = { 0 };
 *      qTrace_Set_OutputFcn( OutPutChar );
 *      /*Create a memory heap*/
-*      qMemMang_Pool_Setup( &another_heap, area_another_heap, 512); 
-*      qOS_Setup( HAL_GetTick, 0.001, IdleTaskCallback );
-*      qOS_Add_Task( &taskA, taskA_Callback, qLowest_Priority, 0.1, 
-*                    qPeriodic, qEnabled, NULL);
+*      qMemMang_Pool_Setup( &another_heap, area_another_heap, 512);
+*      qOS_Setup( HAL_GetTick, 0.001f, IdleTaskCallback );
+*      qOS_Add_Task( &taskA, taskA_Callback, qLowest_Priority, 0.1f, qPeriodic, qEnabled, NULL );
 *      qOS_Run();
 *      return 0;
 *  }
@@ -1918,7 +1922,7 @@
 * main thread, call to qTrace_Set_OutputFcn() is used to set up the output-function.
 *
 *  @code{.c}
-*  int main( void ){
+*  int main( void ) {
 *      qTrace_Set_OutputFcn( putUART1 );
 *      ...
 *      ...
@@ -1928,13 +1932,13 @@
 * After that, trace macros will be available for use.
 *
 *  @code{.c}
-*  void IO_TASK_Callback ( qEvent_t e ){
+*  void IO_TASK_Callback ( qEvent_t e ) {
 *      static qUINT32_t Counter = 0;
 *      float Sample;
 *      ...
 *      ...
 *      qTrace_Message( "IO TASK running..." );
-*      Counter ++;
+*      Counter++;
 *      qTrace_Variable( Counter , UnsignedDecimal );
 *      Sample = SensorGetSample ();
 *      qTrace_Variable( Sample , Float );
