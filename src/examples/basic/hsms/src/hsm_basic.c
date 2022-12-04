@@ -90,11 +90,11 @@ void hsm_basic_init ()
 
   qStateMachine_InstallSignalQueue (&basic_state_machine, &top_sigqueue );
 
-  qStateMachine_StateSubscribe (&basic_state_machine, &basic_on_state,       QSM_STATE_TOP,   basic_on_state_callback,    NULL, NULL);  
-  qStateMachine_StateSubscribe (&basic_state_machine, &basic_off_state,      QSM_STATE_TOP,   basic_off_state_callback,   NULL, NULL);  
+  qStateMachine_StateSubscribe (&basic_state_machine, &basic_on_state,       QSM_STATE_TOP,   basic_on_state_callback,    NULL, NULL);
+  qStateMachine_StateSubscribe (&basic_state_machine, &basic_off_state,      QSM_STATE_TOP,   basic_off_state_callback,   NULL, NULL);
 
   qStateMachine_Set_StateTransitions (&basic_on_state, basic_on_state_transitions, qFLM_ArraySize(basic_on_state_transitions));
   qStateMachine_Set_StateTransitions (&basic_off_state, basic_off_state_transitions, qFLM_ArraySize(basic_off_state_transitions));
- 
+
   qOS_Add_StateMachineTask (&basic_task, &basic_state_machine, qLowest_Priority, 0.1f, qEnabled, NULL);
 }
