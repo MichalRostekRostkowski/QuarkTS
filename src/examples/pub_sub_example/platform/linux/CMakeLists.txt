@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 3.20)
-project (qts_x86_linux_test VERSION 1.0)
+project (qts_pse_example VERSION 1.0)
 
 #
 # Main
@@ -33,4 +33,4 @@ include_directories (${QUARKTS_INC_DIR} ${QUARKTS_CONFIG_DIR})
 add_library (hsms STATIC ${HSMS_SOURCES})
 include_directories (${HSMS_INC_DIR} ${HSMS_SYSTEM_SIGNALS_INC_DIR})
 
-target_link_libraries (main quarkts hsms)
+target_link_libraries (main quarkts hsms -lzmq)

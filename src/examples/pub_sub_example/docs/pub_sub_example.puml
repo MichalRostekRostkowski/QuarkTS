@@ -1,0 +1,53 @@
+@startuml
+state SA {
+  [*] --> SA1
+  state SA1 {
+    [*] --> SA11
+    state SA11 {
+
+    }
+    state SA12 {
+
+    }
+  }
+  
+  state SA2 {
+    [*] --> SA21
+    state SA21 {
+    }
+
+    state SA22 {
+    }    
+  }
+}
+
+state SB {
+  [*] --> SB1
+  state SB1 {
+    [*] --> SB11
+    state SB11 {
+
+    }
+    state SB12 {
+
+    }
+  }  
+
+  state SB2 {
+    [*] --> SB21
+    state SB21 {
+
+    }
+    state SB22 {
+
+    }    
+  }
+}
+
+SA1 --> SA2: SYS_SIG_1
+SA2 --> SA1: SYS_SIG_2
+
+SB1 --> SB2: SYS_SIG_1
+SB2 --> SB1: SYS_SIG_2
+
+@enduml
